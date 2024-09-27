@@ -1,36 +1,22 @@
 import socket
 import threading
 from tkinter import *
-from tkinter import simpledialog, messagebox
+from tkinter import simpledialog
 
 class Chat:
     def __init__(self):
         HOST = 'localhost'
         PORT = 55555
-        
         self.cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.cliente.connect((HOST, PORT))
-        except socket.error as e:
-            messagebox.showerror("Erro", f"Não foi possível conectar ao servidor: {e}")
-            exit()
-
+        self.cliente.connect((HOST, PORT))
         login = Tk()
         login.withdraw()
         
         self.janela_carregada = False
         self.ativo = True
 
-        # Coletar nome e sala com tratamento de erro
         self.nome = simpledialog.askstring('Nome', 'Digite seu nome!', parent=login)
-        if not self.nome:
-            messagebox.showerror("Erro", "Nome não pode ser vazio!")
-            exit()
-
         self.sala = simpledialog.askstring('Sala', 'Digite a sala que deseja entrar!', parent=login)
-        if not self.sala:
-            messagebox.showerror("Erro", "Sala não pode ser vazia!")
-            exit()
 
         thread = threading.Thread(target=self.conecta)
         thread.start()
@@ -55,17 +41,13 @@ class Chat:
         self.root.mainloop()
 
     def fechar(self):
-        self.ativo = False
         self.root.destroy()
         self.cliente.close()
 
     def conecta(self):
-        while self.ativo:
+        while True:
             try:
                 recebido = self.cliente.recv(1024)
-                if not recebido:
-                    messagebox.showwarning("Aviso", "Conexão encerrada pelo servidor.")
-                    break
                 if recebido == b'SALA':
                     self.cliente.send(self.sala.encode())
                     self.cliente.send(self.nome.encode())
@@ -73,17 +55,13 @@ class Chat:
                     self.caixa_texto.insert('end', recebido.decode() + '\n')
             except ConnectionAbortedError:
                 break
-            except Exception as e:
-                messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
-                break
+            except:
+                pass
 
     def enviarMensagem(self):
         mensagem = self.envia_mensagem.get()
-        if mensagem:  
-            try:
-                self.cliente.send(mensagem.encode())
-                self.envia_mensagem.delete(0, 'end')
-            except Exception as e:
-                messagebox.showerror("Erro", f"Não foi possível enviar a mensagem: {e}")
+        if mensagem:
+            self.cliente.send(mensagem.encode())
+            self.envia_mensagem.delete(0, 'end')
 
 chat = Chat()
